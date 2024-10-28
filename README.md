@@ -1,3 +1,7 @@
+## Ghostup
+
+Ghostup is a utility for helping administer a wwivnet style messaging network. It was written for use with [Ghostnet](https://github.com/robbiew/ghostnet).
+
 ## Building
 
 compile with:
