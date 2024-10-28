@@ -13,6 +13,11 @@ void print_help() {
     std::cerr << "        subping    /path/to/network.dir\n";
     std::cerr << "        subcomp    /path/to/network.dir\n";
     std::cerr << "        subsend    /path/to/network.dir\n";
+    std::cerr << "        sendfile   [file] /path/to/network.dir\n";
+    std::cerr << "                    file: bbslist, connect, fbackhdr,\n";
+    std::cerr << "                          wwivnews, categ, networks,\n";
+    std::cerr << "                          binkp\n";
+    std::cerr << "        sendother   /path/to/file.net /path/to/network.dir\n";
 }
 
 std::vector<uint16_t> get_all_nodes(const char *path_to_network_dir) {
@@ -207,6 +212,95 @@ void subping(const char *path_to_network_dir) {
     }
 }
 
+void sendfile(const char *path_to_network_dir, int minor_type, std::string file) {
+    std::vector<uint16_t> nodes = get_all_nodes(path_to_network_dir);
+
+    std::ifstream t(std::string(path_to_network_dir) + "/" + file);
+    std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+
+    if (!nodes.empty()) {
+        FILE *fptr = get_px_net(path_to_network_dir);
+        struct net_header_rec msg;
+        msg.fromsys = 1;
+        msg.fromuser = 1;
+        msg.daten = time(NULL);
+        msg.list_len = nodes.size();
+        msg.main_type = 1;
+        msg.minor_type = minor_type;
+        msg.tosys = 0;
+        msg.touser = 0;
+        msg.method = 0;
+        msg.length = str.length();
+
+        fwrite(&msg, sizeof(struct net_header_rec), 1, fptr);
+        for (size_t i = 0; i < nodes.size(); i++) {
+            fwrite(&nodes.at(i), sizeof(uint16_t), 1, fptr);
+        }
+        fwrite(str.c_str(), str.length(), 1, fptr);
+        fclose(fptr);
+
+        std::cout << "Now run network1\n";        
+    }
+}
+
+void sendother(const char *path_to_network_dir, std::string file) {
+    
+    std::filesystem::path filep(file);
+
+    if (filep.extension() != ".net" && filep.extension() != ".zip") {
+        std::cerr << "File extension must be .net or .zip\n";
+        return;
+    }
+
+    if (filep.stem().u8string().length() > 8) {
+        std::cerr << "Filename must be 8.3 format.\n";
+        return;
+    }
+
+    uint16_t flags;
+
+    if (filep.extension() == ".zip") {
+        flags = 0x2;
+    } else {
+        flags = 0;
+    }
+
+
+
+    std::vector<uint16_t> nodes = get_all_nodes(path_to_network_dir);
+
+    std::ifstream t(file);
+    std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+
+    uint32_t msgsize = str.length() + filep.stem().u8string().length() + 2;
+
+    if (!nodes.empty()) {
+        FILE *fptr = get_px_net(path_to_network_dir);
+        struct net_header_rec msg;
+        msg.fromsys = 1;
+        msg.fromuser = 1;
+        msg.daten = time(NULL);
+        msg.list_len = nodes.size();
+        msg.main_type = 1;
+        msg.minor_type = 9;
+        msg.tosys = 0;
+        msg.touser = 0;
+        msg.method = 0;
+        msg.length = msgsize;
+
+        fwrite(&flags, 2, 1, fptr);
+        fwrite(filep.stem().u8string().c_str(), filep.stem().u8string().length(), 1, fptr);
+        fwrite(&msg, sizeof(struct net_header_rec), 1, fptr);
+        for (size_t i = 0; i < nodes.size(); i++) {
+            fwrite(&nodes.at(i), sizeof(uint16_t), 1, fptr);
+        }
+        fwrite(str.c_str(), str.length(), 1, fptr);
+        fclose(fptr);
+
+        std::cout << "Now run network1\n";        
+    }
+}
+
 int main(int argc, char **argv) {
     if (argc == 1) {
         print_help();
@@ -229,6 +323,29 @@ int main(int argc, char **argv) {
         } else if (strcmp(argv[1], "subsend") == 0) {
             subsend(argv[2]);
             exit(0);
+        } else {
+            print_help();
+            exit(-1);
+        }
+    } else if (argc == 4) {
+        if (strcmp(argv[1], "sendfile") == 0) {
+            if (strcmp(argv[2], "bbslist") == 0) {
+                sendfile(argv[3], 1, "bbslist.net");
+            } else if (strcmp(argv[2], "connect") == 0) {
+                sendfile(argv[3], 2, "connect.net");
+            } else if (strcmp(argv[2], "fbackhdr") == 0) {
+                sendfile(argv[3], 5, "fbackhdr.net");
+            } else if (strcmp(argv[2], "wwivnews") == 0) {
+                sendfile(argv[3], 6, "wwivnews.net");
+            } else if (strcmp(argv[2], "categ") == 0) {
+                sendfile(argv[3], 7, "categ.net");
+            } else if (strcmp(argv[2], "networks") == 0) {
+                sendfile(argv[3], 8, "networks.lst");
+            } else if (strcmp(argv[2], "binkp") == 0) {
+                sendfile(argv[3], 10, "binkp.net");
+            }
+        } else if (strcmp(argv[1], "sendother") == 0) {
+            sendother(argv[3], argv[2]);
         } else {
             print_help();
             exit(-1);
