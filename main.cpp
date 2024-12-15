@@ -330,19 +330,19 @@ int main(int argc, char **argv) {
     } else if (argc == 4) {
         if (strcmp(argv[1], "sendfile") == 0) {
             if (strcmp(argv[2], "bbslist") == 0) {
-                sendfile(argv[3], 1, "bbslist.net");
+                sendfile(argv[3], 0x01, "bbslist.net");
             } else if (strcmp(argv[2], "connect") == 0) {
-                sendfile(argv[3], 2, "connect.net");
+                sendfile(argv[3], 0x02, "connect.net");
             } else if (strcmp(argv[2], "fbackhdr") == 0) {
-                sendfile(argv[3], 5, "fbackhdr.net");
+                sendfile(argv[3], 0x05, "fbackhdr.net");
             } else if (strcmp(argv[2], "wwivnews") == 0) {
-                sendfile(argv[3], 6, "wwivnews.net");
+                sendfile(argv[3], 0x06, "wwivnews.net");
             } else if (strcmp(argv[2], "categ") == 0) {
-                sendfile(argv[3], 7, "categ.net");
+                sendfile(argv[3], 0x07, "categ.net");
             } else if (strcmp(argv[2], "networks") == 0) {
-                sendfile(argv[3], 8, "networks.lst");
+                sendfile(argv[3], 0x08, "networks.lst");
             } else if (strcmp(argv[2], "binkp") == 0) {
-                sendfile(argv[3], 10, "binkp.net");
+                sendfile(argv[3], 0x10, "binkp.net");
             }
         } else if (strcmp(argv[1], "sendother") == 0) {
             sendother(argv[3], argv[2]);
